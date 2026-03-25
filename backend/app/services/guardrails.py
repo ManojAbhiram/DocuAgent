@@ -13,32 +13,44 @@ PII_PATTERNS = {
     # Add more patterns like Bank Account, SSN, etc.
 }
 
+
 class GuardrailService:
-    
+
     def __init__(self):
-        self.malicious_keywords = ["ignore previous", "system prompt", "bypass", "jailbreak"]
+        self.malicious_keywords = [
+            "ignore previous",
+            "system prompt",
+            "bypass",
+            "jailbreak",
+        ]
 
     def mask_and_tokenize(self, text: str) -> Tuple[str, Dict[str, str]]:
         """
-        Masks PII in the text and returns the masked text and a token vault mapping.
+        Masks PII in the text using a single pass to avoid overlapping replacements.
         """
         vault_mapping = {}
-        masked_text = text
-        
-        for pii_type, pattern in PII_PATTERNS.items():
-            matches = re.finditer(pattern, masked_text)
-            for match in matches:
-                original_value = match.group()
-                # Use a deterministic or random token ID
-                token_id = f"[{pii_type}_{uuid.uuid4().hex[:8].upper()}]"
-                if original_value not in vault_mapping.values():
-                    vault_mapping[token_id] = original_value
-                    masked_text = masked_text.replace(original_value, token_id)
-                else:
-                    # Find existing token id
-                    existing_token = next(k for k, v in vault_mapping.items() if v == original_value)
-                    masked_text = masked_text.replace(original_value, existing_token)
 
+        # Combine all patterns into one regex with capturing groups
+        master_pattern = "|".join(
+            f"(?P<{ptype}>{pattern})" for ptype, pattern in PII_PATTERNS.items()
+        )
+
+        def replace_callback(match):
+            for ptype in PII_PATTERNS.keys():
+                original_value = match.group(ptype)
+                if original_value:
+                    # Find if this value was already masked
+                    for tid, val in vault_mapping.items():
+                        if val == original_value:
+                            return tid
+
+                    # Create new token
+                    token_id = f"[{ptype}_{uuid.uuid4().hex[:8].upper()}]"
+                    vault_mapping[token_id] = original_value
+                    return token_id
+            return match.group(0)
+
+        masked_text = re.sub(master_pattern, replace_callback, text)
         return masked_text, vault_mapping
 
     def rehydrate(self, text: str, vault_mapping: Dict[str, str]) -> str:
@@ -59,7 +71,7 @@ class GuardrailService:
             if keyword in prompt_lower:
                 return True
         return False
-        
+
     def validate_output_schema(self, response_text: str) -> dict:
         """
         Validates that the output matches expected JSON structure.
@@ -68,5 +80,6 @@ class GuardrailService:
             return json.loads(response_text)
         except json.JSONDecodeError:
             raise ValueError("LLM Output did not match expected JSON format.")
+
 
 guardrails = GuardrailService()

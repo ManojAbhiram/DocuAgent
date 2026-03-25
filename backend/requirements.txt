@@ -7,9 +7,16 @@ passlib[bcrypt]~=1.7
 python-jose[cryptography]~=3.3
 python-multipart~=0.0.6
 aiofiles~=23.1
+urllib3<2
+requests>=2.31.0
+watchfiles
 litellm~=1.0
 celery~=5.3
 redis~=4.6
 PyMuPDF~=1.23
 httpx
 markitdown
+opencv-python
+paddleocr
+paddlepaddle
+pdf2image

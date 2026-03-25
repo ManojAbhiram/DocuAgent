@@ -9,6 +9,7 @@ from app.models.user import User
 
 router = APIRouter()
 
+
 @router.post("/login")
 def login_access_token(
     session: SessionDep, form_data: OAuth2PasswordRequestForm = Depends()
@@ -17,7 +18,9 @@ def login_access_token(
     OAuth2 compatible token login, get an access token for future requests
     """
     user = session.query(User).filter(User.email == form_data.username).first()
-    if not user or not security.verify_password(form_data.password, user.hashed_password):
+    if not user or not security.verify_password(
+        form_data.password, user.hashed_password
+    ):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
@@ -28,6 +31,7 @@ def login_access_token(
         ),
         "token_type": "bearer",
     }
+
 
 @router.post("/register")
 def register_user(
@@ -49,6 +53,7 @@ def register_user(
     session.refresh(user)
     return {"message": "User created successfully", "user_id": user.id}
 
+
 @router.get("/me")
 def read_user_me(current_user: CurrentUser) -> Any:
     """
@@ -58,5 +63,5 @@ def read_user_me(current_user: CurrentUser) -> Any:
         "id": current_user.id,
         "email": current_user.email,
         "role": current_user.role,
-        "is_active": current_user.is_active
+        "is_active": current_user.is_active,
     }

@@ -21,23 +21,42 @@ DocuAgent is a **Secure AI Document Processing Platform** designed for enterpris
 
 ## 🚀 Getting Started
 
-Quickly spin up the stack using the provided Makefiles.
-
-### 1. Backend Setup
+### Universal Steps (Using Make)
+If you have `make` installed, use these commands on any OS:
 ```bash
+# 1. Backend
+cd backend && make run
+
+# 2. Frontend
+cd frontend && npm run dev -- --port 5174
+```
+
+### Manual Steps (Platform Specific)
+
+#### 🖥️ Windows (PowerShell)
+```powershell
+# 1. Backend
 cd backend
-make install    # Create venv and install dependencies
-make run        # Run FastAPI on http://localhost:8000
-```
-> View the live API documentation at `http://localhost:8000/docs`
+.\venv\Scripts\Activate.ps1
+python -m uvicorn app.main:app --reload
 
-### 2. Frontend Setup
-```bash
+# 2. Frontend
 cd frontend
-make install    # Install node_modules
-make start      # Start Vite dev server on http://localhost:5173
+npm run dev -- --port 5174
 ```
-> View the dashboard at `http://localhost:5173`
+
+#### 🐧 Linux / macOS
+```bash
+# 1. Backend
+cd backend
+source venv/bin/activate
+uvicorn app.main:app --reload
+
+# 2. Frontend
+cd frontend
+npm run dev -- --port 5174
+```
+> View at: [Backend Docs](http://localhost:8000/docs) | [Frontend](http://localhost:5174)
 
 ## 🔒 Security Principles
 
