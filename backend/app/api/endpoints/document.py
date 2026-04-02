@@ -10,6 +10,8 @@ from app.models.document import Document
 from app.models.audit import AuditLog
 from app.services.document import store_file, process_document_background
 
+from app.schemas.document import DocumentSchema
+
 router = APIRouter()
 
 
@@ -63,7 +65,7 @@ async def upload_documents(
     return {"message": "Files uploaded and processing started", "documents": results}
 
 
-@router.get("/")
+@router.get("/", response_model=List[DocumentSchema])
 def get_documents(session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Get user's documents. Admin can see all.

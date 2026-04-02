@@ -1,12 +1,32 @@
-import { ShieldCheck, Activity, Users, FileLock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ShieldCheck, Activity, Users, FileLock, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 export default function Dashboard() {
+  const [logs, setLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const stats = [
     { label: 'Documents Processed', value: '1,492', icon: FileLock, color: 'text-primary-500' },
     { label: 'PII Elements Masked', value: '45,801', icon: ShieldCheck, color: 'text-blue-500' },
     { label: 'Active Users', value: '12', icon: Users, color: 'text-indigo-500' },
     { label: 'System Uptime (SLA)', value: '99.98%', icon: Activity, color: 'text-green-500' }
   ];
+
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const fetchLogs = async () => {
+    try {
+      const res = await axios.get('/audit/logs');
+      setLogs(res.data.slice(0, 5)); // Show most recent 5
+    } catch (err) {
+      console.error("Failed to fetch logs", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -32,29 +52,43 @@ export default function Dashboard() {
       </div>
 
       <div className="mt-12 bg-white dark:bg-dark-800 rounded-2xl shadow-sm border border-slate-100 dark:border-dark-700 p-6">
-        <h2 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">Recent Audit Logs</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Recent Audit Logs</h2>
+          <button onClick={fetchLogs} className="text-xs text-primary-500 hover:underline">Refresh</button>
+        </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
-            <thead className="bg-slate-50 dark:bg-dark-700 text-slate-500 dark:text-slate-300">
-              <tr>
-                <th className="px-6 py-3 font-medium rounded-tl-lg">Timestamp</th>
-                <th className="px-6 py-3 font-medium">Action</th>
-                <th className="px-6 py-3 font-medium">User ID</th>
-                <th className="px-6 py-3 font-medium rounded-tr-lg">Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Dummy data representing actual audit logs */}
-              {['DOCUMENT_UPLOAD', 'LLM_CALL', 'DOCUMENT_PROCESSED'].map((action, i) => (
-                <tr key={i} className="border-b border-slate-100 dark:border-dark-700 hover:bg-slate-50 dark:hover:bg-dark-700/50 transition-colors">
-                  <td className="px-6 py-4">2026-03-23 10:45:0{i}</td>
-                  <td className="px-6 py-4 font-medium text-primary-600 dark:text-primary-400">{action}</td>
-                  <td className="px-6 py-4">Admin</td>
-                  <td className="px-6 py-4 truncate max-w-xs">{action === 'LLM_CALL' ? 'Masked 5 PII elements before sending' : 'Success'}</td>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-slate-300" />
+            </div>
+          ) : (
+            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
+              <thead className="bg-slate-50 dark:bg-dark-700 text-slate-500 dark:text-slate-300">
+                <tr>
+                  <th className="px-6 py-3 font-medium rounded-tl-lg">Timestamp</th>
+                  <th className="px-6 py-3 font-medium">Action</th>
+                  <th className="px-6 py-3 font-medium">User ID</th>
+                  <th className="px-6 py-3 font-medium rounded-tr-lg">Details</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {logs.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-12 text-center text-slate-400">No recent logs found.</td>
+                  </tr>
+                ) : (
+                  logs.map((log, i) => (
+                    <tr key={i} className="border-b border-slate-100 dark:border-dark-700 hover:bg-slate-50 dark:hover:bg-dark-700/50 transition-colors">
+                      <td className="px-6 py-4">{new Date(log.timestamp).toLocaleString()}</td>
+                      <td className="px-6 py-4 font-medium text-primary-600 dark:text-primary-400">{log.action}</td>
+                      <td className="px-6 py-4">{log.user_id}</td>
+                      <td className="px-6 py-4 truncate max-w-xs">{log.details}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

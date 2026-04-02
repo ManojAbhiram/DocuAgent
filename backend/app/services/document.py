@@ -20,6 +20,7 @@ async def store_file(file: UploadFile, owner_id: int) -> str:
 
 
 def process_document_background(doc_id: int, file_path: str, doc_type: str):
+    print(f"DEBUG: Starting background process for doc_id={doc_id}, file={file_path}")
     db = SessionLocal()
     try:
         extracted_text = ""
@@ -27,21 +28,26 @@ def process_document_background(doc_id: int, file_path: str, doc_type: str):
 
         # Determine whether to use PaddleOCR (Vision) or MarkItDown (Universal)
         if ext in [".pdf", ".jpg", ".jpeg", ".png"]:
+            print(f"DEBUG: Using PaddleOCR for {ext}")
             try:
                 extracted_text = process_file_with_paddle(file_path)
-            except Exception:
+            except Exception as e:
+                print(f"DEBUG: PaddleOCR FAILED: {e}")
                 extracted_text = ""
 
         # Fallback to MarkItDown if Paddle wasn't used or failed
         if not extracted_text:
+            print(f"DEBUG: Using MarkItDown for {ext}")
             md = MarkItDown()
             result = md.convert(file_path)
             extracted_text = result.text_content
+            print(f"DEBUG: MarkItDown extracted {len(extracted_text)} characters")
 
         doc = db.query(Document).filter(Document.id == doc_id).first()
         if doc:
             doc.extracted_text = extracted_text.strip()
             doc.status = "Completed"
+            print(f"DEBUG: Updating doc_id={doc_id} to COMPLETED")
 
             # Log audit
             audit = AuditLog(
@@ -52,7 +58,12 @@ def process_document_background(doc_id: int, file_path: str, doc_type: str):
             )
             db.add(audit)
             db.commit()
+            print("DEBUG: Commit successful")
+        else:
+            print(f"DEBUG: Document {doc_id} NOT FOUND in DB")
+            
     except Exception as e:
+        print(f"DEBUG: Background task EXCEPTION: {e}")
         doc = db.query(Document).filter(Document.id == doc_id).first()
         if doc:
             doc.status = "Failed"
@@ -60,3 +71,4 @@ def process_document_background(doc_id: int, file_path: str, doc_type: str):
             db.commit()
     finally:
         db.close()
+        print("DEBUG: Database session closed")

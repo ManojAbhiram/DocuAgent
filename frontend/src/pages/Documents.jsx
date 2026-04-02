@@ -1,9 +1,36 @@
-import { useState } from 'react';
-import { UploadCloud, File, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { UploadCloud, File, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
+import axios from 'axios';
 
 export default function Documents() {
   const [dragActive, setDragActive] = useState(false);
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState([]); // This will now hold { name, size, status, id } objects
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDocuments();
+    // Set up a poll for processing status
+    const interval = setInterval(fetchDocuments, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchDocuments = async () => {
+    try {
+      const res = await axios.get('/documents/');
+      // Map backend documents to the local UI format
+      const formatted = res.data.map(doc => ({
+        name: doc.filename,
+        size: 0, // Backend might not store size, or we can add it
+        status: doc.status.toLowerCase(), // 'uploaded', 'processing', 'completed', 'failed'
+        id: doc.id
+      }));
+      setFiles(formatted);
+    } catch (err) {
+      console.error("Failed to fetch documents", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -31,8 +58,29 @@ export default function Documents() {
     }
   };
 
-  const handleFiles = (newFiles) => {
-    setFiles([...files, ...Array.from(newFiles)]);
+  const handleFiles = async (newFiles) => {
+    const filesArray = Array.from(newFiles);
+    
+    for (const file of filesArray) {
+      const formData = new FormData();
+      formData.append('files', file);
+      let docType = "General";
+      if (file.name.toLowerCase().includes('contract')) docType = "Contract";
+      if (file.name.toLowerCase().includes('invoice')) docType = "Invoice";
+      
+      // Temporary optimistic update
+      setFiles(prev => [...prev, { name: file.name, size: file.size, status: 'uploading' }]);
+
+      try {
+        await axios.post(`/documents/upload?doc_type=${docType}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        fetchDocuments(); // Refresh list to get real IDs and status
+      } catch (err) {
+        console.error("Upload failed for", file.name, err);
+        fetchDocuments();
+      }
+    }
   };
 
   return (
@@ -72,12 +120,30 @@ export default function Documents() {
                   <File className="w-6 h-6 text-primary-500 mr-4" />
                   <div>
                     <p className="text-sm font-medium text-slate-900 dark:text-slate-200">{file.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    {file.size > 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{(file.size / 1024 / 1024).toFixed(2)} MB</p>}
                   </div>
                 </div>
-                <div className="flex items-center text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  Queued
+                <div className="flex items-center text-sm font-medium">
+                  {file.status === 'uploading' || file.status === 'uploaded' || file.status === 'processing' ? (
+                    <div className="flex items-center text-primary-600 dark:text-primary-400">
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      {file.status === 'uploading' ? 'Uploading...' : 'Processing...'}
+                    </div>
+                  ) : file.status === 'completed' || file.status === 'success' ? (
+                    <div className="flex items-center text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      Completed
+                    </div>
+                  ) : file.status === 'failed' || file.status === 'error' ? (
+                    <div className="flex items-center text-red-600 dark:text-red-400">
+                      <AlertCircle className="w-5 h-5 mr-2" />
+                      Failed
+                    </div>
+                  ) : (
+                    <div className="flex items-center text-slate-500 dark:text-slate-400">
+                      {file.status}
+                    </div>
+                  )}
                 </div>
               </li>
             ))}

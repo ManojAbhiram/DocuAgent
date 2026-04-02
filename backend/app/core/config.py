@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     SQLALCHEMY_DATABASE_URI: str = "sqlite:///./docuagent.db"
 
     # LLM Settings
-    LITELLM_DEFAULT_MODEL: str = "gemini/gemini-pro"
+    LITELLM_DEFAULT_MODEL: str = "ollama/llama3"
     OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
 
