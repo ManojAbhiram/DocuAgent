@@ -4,29 +4,45 @@ import axios from 'axios';
 
 export default function Dashboard() {
   const [logs, setLogs] = useState([]);
+  const [stats, setStats] = useState({
+    docs_processed: '0',
+    pii_masked: '0',
+    active_users: '0',
+    uptime: '100%'
+  });
   const [isLoading, setIsLoading] = useState(true);
-
-  const stats = [
-    { label: 'Documents Processed', value: '1,492', icon: FileLock, color: 'text-primary-500' },
-    { label: 'PII Elements Masked', value: '45,801', icon: ShieldCheck, color: 'text-blue-500' },
-    { label: 'Active Users', value: '12', icon: Users, color: 'text-indigo-500' },
-    { label: 'System Uptime (SLA)', value: '99.98%', icon: Activity, color: 'text-green-500' }
-  ];
 
   useEffect(() => {
     fetchLogs();
+    fetchStats();
   }, []);
 
   const fetchLogs = async () => {
     try {
-      const res = await axios.get('/audit/logs');
-      setLogs(res.data.slice(0, 5)); // Show most recent 5
+      const res = await axios.get('/audit-logs/');
+      setLogs(res.data.slice(0, 5));
     } catch (err) {
       console.error("Failed to fetch logs", err);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const res = await axios.get('/audit-logs/stats');
+      setStats(res.data);
+    } catch (err) {
+      console.error("Failed to fetch stats", err);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const statConfig = [
+    { label: 'Documents Processed', value: stats.docs_processed.toLocaleString(), icon: FileLock, color: 'text-primary-500' },
+    { label: 'PII Elements Masked', value: stats.pii_masked.toLocaleString(), icon: ShieldCheck, color: 'text-blue-500' },
+    { label: 'Active Users', value: stats.active_users, icon: Users, color: 'text-indigo-500' },
+    { label: 'System Uptime (SLA)', value: stats.uptime, icon: Activity, color: 'text-green-500' }
+  ];
 
   return (
     <div className="space-y-6">
@@ -36,7 +52,7 @@ export default function Dashboard() {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, idx) => (
+        {statConfig.map((stat, idx) => (
           <div key={idx} className="bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-dark-700 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>

@@ -30,7 +30,7 @@ export default function InvoiceAuditor() {
     setError('');
     try {
       const res = await axios.post('/analyzers/invoice', { document_id: parseInt(selectedDocId) });
-      setResult(res.data);
+      setResult(res.data.result);
     } catch (err) {
       setError(err.response?.data?.detail || "Audit failed");
     } finally {

@@ -7,10 +7,13 @@ class ContractAnalyzer:
     def analyze(self, document_text: str, user_id: int) -> Dict[str, Any]:
         prompt = """
         You are an expert legal AI.
-        Extract the key clauses: Termination, Liability, Payment Terms.
+        Extract the key clauses: Termination, Liability, Payment Terms, and any others.
         Assign an overall 'Risk Score' out of 100.
         Find any 'Deadline' alerts (e.g., expiry dates).
-        Response MUST be a JSON object with keys: 'clauses', 'risk_score', 'deadlines'.
+        Response MUST be a JSON object with keys: 
+        - 'clauses': array of objects { 'clause_type': string, 'risk': 'Low'|'Medium'|'High', 'text': string }
+        - 'risk_score': integer
+        - 'deadlines': array of strings
         """
 
         # All LLM requests go through the guardrail

@@ -31,7 +31,7 @@ export default function ContractAnalyzer() {
     setError('');
     try {
       const res = await axios.post('/analyzers/contract', { document_id: parseInt(selectedDocId) });
-      setResult(res.data);
+      setResult(res.data.result);
     } catch (err) {
       setError(err.response?.data?.detail || "Analysis failed");
     } finally {
@@ -111,8 +111,8 @@ export default function ContractAnalyzer() {
                 {(result.clauses || []).map((clause, i) => (
                   <div key={i} className="p-4 bg-slate-50 dark:bg-dark-900 rounded-xl border border-slate-100 dark:border-dark-700">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold text-slate-900 dark:text-slate-200">{clause.type || clause.clause_type}</span>
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${clause.risk === 'Low' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'}`}>
+                      <span className="font-semibold text-slate-900 dark:text-slate-200">{clause.clause_type || clause.type}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${clause.risk === 'Low' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : clause.risk === 'Medium' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
                         {clause.risk} Risk
                       </span>
                     </div>

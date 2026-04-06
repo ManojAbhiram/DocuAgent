@@ -31,7 +31,7 @@ export default function FinancialAnalyzer() {
     setError('');
     try {
       const res = await axios.post('/analyzers/financial', { document_id: parseInt(selectedDocId) });
-      setResult(res.data);
+      setResult(res.data.result);
     } catch (err) {
       setError(err.response?.data?.detail || "Analysis failed");
     } finally {
@@ -116,7 +116,7 @@ export default function FinancialAnalyzer() {
                 <TrendingUp className="w-5 h-5 mr-2 text-primary-500" /> Secure AI Trend Insights
               </h3>
               <ul className="space-y-3">
-                {(result.trends || []).map((trend, i) => (
+                {(result.trend_insights || result.trends || []).map((trend, i) => (
                   <li key={i} className="flex items-start text-sm text-slate-700 dark:text-slate-300 p-3 bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/30 rounded-lg">
                     <span className="text-indigo-500 mr-2 font-bold">•</span> {trend}
                   </li>

@@ -7,10 +7,13 @@ class InvoiceAuditor:
     def audit(self, document_text: str, user_id: int) -> Dict[str, Any]:
         prompt = """
         You are an expert financial auditor AI.
-        Extract the GST number, Invoice number, Date, and Total Amount.
-        Perform GST validation (check if format is valid).
-        Flag any 'duplicate_suspicions' or 'fraud_risks' based on anomalous amounts or formats.
-        Response MUST be a JSON object with keys: 'gst_number', 'valid_gst', 'invoice_number', 'amount', 'fraud_risks'.
+        Extract the vendor name, invoice date, and total amount.
+        Assign an 'audit_status' (string describing the findings).
+        Response MUST be a JSON object with keys: 
+        - 'vendor_name': string
+        - 'invoice_date': string (YYYY-MM-DD)
+        - 'total_amount': string (e.g. '$1,234.56')
+        - 'audit_status': string
         """
 
         # SecureLLMService ensures all numbers/PII are sent as tokens and restitched back
