@@ -84,3 +84,28 @@ Dedicated sub-services wrapped around the Guardrails offering specific analytica
 ## 6. Deployment & Future Considerations
 - **Scalability:** Next phase involves replacing FastAPI `BackgroundTasks` with a dedicated `Celery` messaging queue backed by `Redis`. 
 - **Orchestration:** Must be entirely Docker-compatible. The platform guarantees isolation between the generic Database Node and the Worker Node running heavy OCR logic.
+
+---
+
+## 7. End-to-End Workflow (Document to Result)
+
+### 7.1. Document Upload
+- **Trigger:** User uploads multi-format files (PDF, PNG, JPG) via the React frontend's ingestion UI.
+- **Action:** Frontend makes an async `POST /documents/upload` request. Backend stores the file on disk, creates a Database record, logs an `AuditLog`, and routes text extraction to a FastAPI Background Task.
+
+### 7.2. Asynchronous Extraction
+- **OCR & Parsing:** The backend task attempts computer-vision text extraction via `PaddleOCR` for visual docs. If unsuccessful, it gracefully falls back to `MarkItDown` for universal extraction.
+- **Completion:** The raw text is written to `Document.extracted_text` in the database, and the status is successfully marked as `Completed`.
+
+### 7.3. The Guardrail Engine (Security)
+- **Trigger:** User selects the completed document and requests AI analysis (e.g., Contract Analyzer).
+- **Masking:** The raw text is routed through the `GuardrailService`. It identifies sensitive PII (Emails, Phones, GST) and swaps them with secure tokens mappings stored in a transient vault (e.g., `[EMAIL_ABCD123]`).
+- **Prompt Defense:** Checks the incoming prompt against malicious jailbreak dictionaries.
+
+### 7.4. Secure LLM Analysis
+- **Zero-Trust:** The LLM (via `LiteLLM`) receives only the masked text. 
+- **Generation:** Generates a structured JSON response under low-temperature execution to prevent hallucinations.
+
+### 7.5. Rehydration & Result Rendering
+- **Un-masking:** Validated JSON payloads return through the `GuardrailService` where secure tokens are *rehydrated* back into their original PII values natively.
+- **Rendering:** The final payload is stored in the DB, sent to the frontend, and elegantly visualized with charts, color-coded risk flags, and structured tables.

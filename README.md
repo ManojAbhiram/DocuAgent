@@ -28,7 +28,7 @@ If you have `make` installed, use these commands on any OS:
 cd backend && make run
 
 # 2. Frontend
-cd frontend && npm run dev -- --port 5174
+cd frontend && npm run dev
 ```
 
 ### Manual Steps (Platform Specific)
@@ -42,7 +42,7 @@ python -m uvicorn app.main:app --reload
 
 # 2. Frontend
 cd frontend
-npm run dev -- --port 5174
+npm run dev
 ```
 
 #### 🐧 Linux / macOS
@@ -54,9 +54,9 @@ uvicorn app.main:app --reload
 
 # 2. Frontend
 cd frontend
-npm run dev -- --port 5174
+npm run dev
 ```
-> View at: [Backend Docs](http://localhost:8000/docs) | [Frontend](http://localhost:5174)
+> View at: [Backend Docs](http://localhost:8000/docs) | [Frontend](http://localhost:5173)
 
 ## 🔒 Security Principles
 
